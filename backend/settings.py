@@ -51,6 +51,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_celery_results',
     'rest_framework_simplejwt.token_blacklist',
+    'django_filters',
+    'quiz_manager'
 ]
 
 MIDDLEWARE = [
