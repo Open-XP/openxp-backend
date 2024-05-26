@@ -1,6 +1,7 @@
 from django.db import models
 from datetime import timedelta
 
+
 class WAEC(models.Model):
     duration = models.DurationField(default=timedelta(minutes=60))
     total_questions = models.IntegerField(default=60, )
@@ -12,11 +13,13 @@ class WAEC(models.Model):
     def __str__(self):
         return "WAEC Exam"
 
+
 class Year(models.Model):
     year = models.IntegerField(default=2010)
 
     def __str__(self):
         return str(self.year)
+
 
 class Subject(models.Model):
     exam = models.ForeignKey(WAEC, related_name='subjects', on_delete=models.CASCADE)
@@ -28,6 +31,7 @@ class Subject(models.Model):
 
     def __str__(self):
         return self.name
+
 
 class Questions(models.Model):
     subject = models.ForeignKey(Subject, related_name='questions', on_delete=models.CASCADE)
