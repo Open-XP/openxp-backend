@@ -21,6 +21,6 @@ urlpatterns = [
     path('exams/submit-answer/', SubmitAnswerAPIView.as_view(), name='submit-answer'),
     path('exams/complete-test/<int:pk>/', CompleteTestAPIView.as_view(), name='complete-test'),
     path('exams/<int:test_instance_id>/results/', TestResultAPIView.as_view(), name='test-results'),
-    path('user-score/<int:test_instance_id>/', UserScoreAPIView.as_view(), name='user-score'),
+    path('exams/user-score/<int:test_instance_id>/', UserScoreAPIView.as_view(), name='user-score'),
     path('exams/completed-tests/', CompletedTestsAPIView.as_view(), name='completed-tests'),
 ]
