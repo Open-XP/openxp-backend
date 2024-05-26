@@ -115,6 +115,24 @@ class CompleteTestAPIView(generics.UpdateAPIView):
         if test_instance.is_completed:
             return Response({'message': 'Test is already completed'}, status=400)
 
+        # Get all questions for the test instance
+        all_questions = test_instance.questions.all()
+
+        # Get answered questions
+        answered_questions = UserAnswer.objects.filter(test_instance=test_instance).values_list('question', flat=True)
+
+        # Get unanswered questions
+        unanswered_questions = all_questions.exclude(id__in=answered_questions)
+
+        # Create UserAnswer instances for unanswered questions with is_correct=False
+        for question in unanswered_questions:
+            UserAnswer.objects.create(
+                test_instance=test_instance,
+                question=question,
+                selected_option=None,
+                is_correct=False
+            )
+
         # Using the correct related_name 'answers'
         answers = test_instance.answers.all()
         correct_answers = answers.filter(is_correct=True)
@@ -134,7 +152,6 @@ class CompleteTestAPIView(generics.UpdateAPIView):
 
         return Response({'message': 'Test completed successfully'}, status=status.HTTP_200_OK)
 
-
 class UserScoreAPIView(generics.RetrieveAPIView):
     serializer_class = UserScoreSerializer
     permission_classes = [IsAuthenticated]
@@ -144,6 +161,10 @@ class UserScoreAPIView(generics.RetrieveAPIView):
         test_instance = get_object_or_404(TestInstance, id=test_instance_id, user=self.request.user)
         user_score = get_object_or_404(UserScore, test_instance=test_instance)
         return user_score
+    
+
+# class RetrieveUserScoreAPIView(generics.RetrieveAPIView):
+    
 
 
 class CompletedTestsAPIView(generics.ListAPIView):
