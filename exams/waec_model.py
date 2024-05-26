@@ -50,7 +50,7 @@ class Questions(models.Model):
         ('D', 'Option D'),
         ('E', 'Option E'),
     ]
-    answer = models.CharField(max_length=1, choices=ANSWER_CHOICES)
+    answer = models.CharField(max_length=1, choices=ANSWER_CHOICES, null=True)
 
     class Meta:
         verbose_name = "WAEC Question"
