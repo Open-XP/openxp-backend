@@ -14,13 +14,15 @@ from .models import (
     Year, 
     UserAnswer, 
     UserScore,
-    TotalStudyTime,)
+    TotalStudyTime,
+    )
 from .serializers import (
     TestInstanceSerializer,
     QuestionSerializer, 
     UserAnswerSerializer, 
     UserScoreSerializer,
-    TotalStudyTimeSerializer)
+    TotalStudyTimeSerializer,
+    )
 
 
 class StartTestAPIView(generics.CreateAPIView):
@@ -29,7 +31,7 @@ class StartTestAPIView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         user = self.request.user
-        exam_id = self.request.data.get('exam')  # Assume 'exam' is passed as the 'id'
+        exam_id = self.request.data.get('exam') 
         subject_name = self.request.data.get('subject')
         year_value = self.request.data.get('year')
 
@@ -181,14 +183,7 @@ class UserScoreAPIView(generics.RetrieveAPIView):
         end_time = test_instance.end_time
         total_time = end_time - start_time
 
-        hours, remainder = divmod(total_time.total_seconds(), 3600)
-        minutes, seconds = divmod(remainder, 60)
-
-        # Formatting the time into a string
-        formatted_time = f"{int(hours):02d}h:{int(minutes):02d}m:{int(seconds):02d}s"
-
-        # Update the total_time field in the UserScore instance
-        user_score.total_time = formatted_time
+        user_score.total_time = total_time 
         user_score.save()
 
         return user_score
@@ -253,5 +248,3 @@ class TotalStudyTimeAPIView(generics.RetrieveAPIView):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         return Response(serializer.data)   
-        
-        
