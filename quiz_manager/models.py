@@ -1,6 +1,11 @@
 from django.db import models
 from django.conf import settings
-from exams.waec_model import WAEC, Questions, Subject, Year
+from exams.waec_model import (
+    WAEC, 
+    Questions, 
+    Subject, 
+    Year
+    )
 from datetime import timezone
 from datetime import timedelta
 
@@ -19,7 +24,7 @@ class TestInstance(models.Model):
 
     def mark_as_completed(self):
         self.is_completed = True
-        self.end_time = timezone.now()  # Correct way to set the current time
+        self.end_time = timezone.now() 
         self.save()
         
 
@@ -53,7 +58,7 @@ class UserScore(models.Model):
 
 class TotalStudyTime(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    overall_study_time = models.DurationField(default=timedelta(seconds=0))  # Correctly using timedelta here
+    overall_study_time = models.DurationField(default=timedelta(seconds=0)) 
     last_updated = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
