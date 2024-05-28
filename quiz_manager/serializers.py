@@ -71,3 +71,17 @@ class TotalStudyTimeSerializer(serializers.ModelSerializer):
     class Meta:
         model = TotalStudyTime
         fields = ( 'overall_study_time',)
+        
+        
+class YearSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Year
+        fields = ['id', 'year']
+
+
+class SubjectSerializer(serializers.ModelSerializer):
+    years = YearSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Subject
+        fields = ['id', 'name', 'exam', 'years']
