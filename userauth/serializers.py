@@ -72,7 +72,6 @@ class UserSerializer(serializers.ModelSerializer):
 
         read_only_fields = ('first_name', 'last_name', 'username', 'email','phone_number', 'bio', 'profile_picture')
 
-    
 
 class ProfileSerializer(serializers.ModelSerializer):
     interest = serializers.StringRelatedField(many=True)
