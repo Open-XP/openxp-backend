@@ -3,9 +3,24 @@ from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.exceptions import NotFound, ValidationError
 from django.utils import timezone
+from datetime import timedelta
 from rest_framework.permissions import IsAuthenticated
-from .models import TestInstance, Questions, WAEC, Subject, Year, UserAnswer, UserScore
-from .serializers import TestInstanceSerializer, QuestionSerializer, UserAnswerSerializer, UserScoreSerializer
+from django.db.models import Sum
+from .models import (
+    TestInstance, 
+    Questions, 
+    WAEC, 
+    Subject, 
+    Year, 
+    UserAnswer, 
+    UserScore,
+    TotalStudyTime,)
+from .serializers import (
+    TestInstanceSerializer,
+    QuestionSerializer, 
+    UserAnswerSerializer, 
+    UserScoreSerializer,
+    TotalStudyTimeSerializer)
 
 
 class StartTestAPIView(generics.CreateAPIView):
@@ -14,13 +29,14 @@ class StartTestAPIView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         user = self.request.user
-        exam_id = self.request.data.get('exam')
-        subject_id = self.request.data.get('subject')
-        year_id = self.request.data.get('year')
+        exam_id = self.request.data.get('exam')  # Assume 'exam' is passed as the 'id'
+        subject_name = self.request.data.get('subject')
+        year_value = self.request.data.get('year')
 
         exam = get_object_or_404(WAEC, id=exam_id)
-        subject = get_object_or_404(Subject, id=subject_id, exam=exam)
-        year = get_object_or_404(Year, id=year_id)
+        subject = get_object_or_404(Subject, name=subject_name)
+        year = get_object_or_404(Year, year=year_value)
+
 
         questions = Questions.objects.filter(subject=subject, year=year)[:exam.total_questions]
         if questions.count() < exam.total_questions:
@@ -42,7 +58,6 @@ class RetrieveAllTestInstancesAPIView(generics.ListAPIView):
         user = self.request.user
         return TestInstance.objects.filter(user=user)
     
-
 
 class DeleteTestInstanceAPIView(generics.DestroyAPIView):
     serializer_class = TestInstanceSerializer
@@ -160,13 +175,26 @@ class UserScoreAPIView(generics.RetrieveAPIView):
         test_instance_id = self.kwargs['test_instance_id']
         test_instance = get_object_or_404(TestInstance, id=test_instance_id, user=self.request.user)
         user_score = get_object_or_404(UserScore, test_instance=test_instance)
+
+        # Calculate total_time
+        start_time = test_instance.start_time
+        end_time = test_instance.end_time
+        total_time = end_time - start_time
+
+        hours, remainder = divmod(total_time.total_seconds(), 3600)
+        minutes, seconds = divmod(remainder, 60)
+
+        # Formatting the time into a string
+        formatted_time = f"{int(hours):02d}h:{int(minutes):02d}m:{int(seconds):02d}s"
+
+        # Update the total_time field in the UserScore instance
+        user_score.total_time = formatted_time
+        user_score.save()
+
         return user_score
     
 
 # class RetrieveUserScoreAPIView(generics.RetrieveAPIView):
-    
-
-
 class CompletedTestsAPIView(generics.ListAPIView):
     serializer_class = TestInstanceSerializer
     permission_classes = [IsAuthenticated]
@@ -193,3 +221,37 @@ class TestResultAPIView(generics.RetrieveAPIView):
         }
 
         return Response(result)
+    
+
+class TotalStudyTimeAPIView(generics.RetrieveAPIView):
+    serializer_class = TotalStudyTimeSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        user = self.request.user
+
+        # Get or create the existing TotalStudyTime instance for the user
+        total_study_time, created = TotalStudyTime.objects.get_or_create(user=user)
+
+        # Fetch new completed test instances that have not been accounted for since the last update
+        if not created:
+            new_total_time = timedelta()
+            query = TestInstance.objects.filter(user=user, is_completed=True, end_time__gt=total_study_time.last_updated)
+            for instance in query:
+                if instance.end_time and instance.start_time:
+                    new_total_time += (instance.end_time - instance.start_time)
+
+            # Update the overall_study_time if there are new test instances
+            if new_total_time:
+                total_study_time.overall_study_time += new_total_time
+                total_study_time.last_updated = timezone.now()
+                total_study_time.save()
+
+        return total_study_time
+
+    def get(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)   
+        
+        
