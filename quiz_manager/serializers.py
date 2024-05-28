@@ -20,14 +20,16 @@ class TestInstanceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TestInstance
-        fields = ['id', 
-                  'user', 
-                  'exam', 
-                  'subject', 
-                  'year', 
-                  'start_time', 
-                  'end_time', 
-                  'is_completed']
+        fields = [
+            'id', 
+            'user', 
+            'exam', 
+            'subject', 
+            'year', 
+            'start_time', 
+            'end_time', 
+            'is_completed',
+            ]
         read_only_fields = ['user',]
 
 
@@ -48,16 +50,19 @@ class QuestionSerializer(serializers.ModelSerializer):
 class UserScoreSerializer(serializers.ModelSerializer):
     correct_questions = QuestionSerializer(many=True, read_only=True)
     incorrect_questions = QuestionSerializer(many=True, read_only=True)
+    total_time = FormattedDurationField()
 
     class Meta:
         model = UserScore
-        fields = ['id',
-                  'total_time',
-                  'score',
-                  'test_instance',
-                  'correct_questions',
-                  'incorrect_questions',
-                  'total_time',]
+        fields = [
+            'id',
+            'total_time',
+            'score',
+            'test_instance',
+            'correct_questions',
+            'incorrect_questions',
+            'total_time',
+            ]
         
 
 class TotalStudyTimeSerializer(serializers.ModelSerializer):
