@@ -22,6 +22,7 @@ from .serializers import (
     UserAnswerSerializer, 
     UserScoreSerializer,
     TotalStudyTimeSerializer,
+    SubjectSerializer,
     )
 
 
@@ -247,4 +248,9 @@ class TotalStudyTimeAPIView(generics.RetrieveAPIView):
     def get(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
-        return Response(serializer.data)   
+        return Response(serializer.data)
+    
+    
+class SubjectListAPIView(generics.ListAPIView):
+    queryset = Subject.objects.all()
+    serializer_class = SubjectSerializer
