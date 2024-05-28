@@ -70,4 +70,4 @@ class TotalStudyTimeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TotalStudyTime
-        fields = ('user', 'overall_study_time')
+        fields = ( 'overall_study_time',)
