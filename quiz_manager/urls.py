@@ -11,6 +11,7 @@ from .views import (
     RetrieveIndividualQuestionsAPIView,
     UserScoreAPIView,
     TotalStudyTimeAPIView,
+    SubjectListAPIView,
 )
 
 urlpatterns = [
@@ -25,4 +26,5 @@ urlpatterns = [
     path('exams/user-score/<int:test_instance_id>/', UserScoreAPIView.as_view(), name='user-score'),
     path('exams/completed-tests/', CompletedTestsAPIView.as_view(), name='completed-tests'),
     path('exams/total-study-time/', TotalStudyTimeAPIView.as_view(), name='total-study-time'),
+    path('subjects/', SubjectListAPIView.as_view(), name='subject-list'),
 ]
