@@ -76,12 +76,16 @@ class TotalStudyTimeSerializer(serializers.ModelSerializer):
 class YearSerializer(serializers.ModelSerializer):
     class Meta:
         model = Year
-        fields = ['id', 'year']
-
+        fields = ['year']
 
 class SubjectSerializer(serializers.ModelSerializer):
-    years = YearSerializer(many=True, read_only=True)
+    years = serializers.SerializerMethodField()
 
     class Meta:
         model = Subject
-        fields = ['id', 'name', 'exam', 'years']
+        fields = ['name', 'exam', 'years']
+
+    def get_years(self, obj):
+        # Get unique years associated with the subject's questions.
+        years = Year.objects.filter(questions__subject=obj).distinct()
+        return YearSerializer(years, many=True).data
