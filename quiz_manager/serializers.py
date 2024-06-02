@@ -11,17 +11,19 @@ from .models import (
                     TotalStudyTime,
                     )
 
+waec_instance = WAEC()
 
 class TestInstanceSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)
     exam = serializers.SlugRelatedField(slug_field='id', queryset=WAEC.objects.all())
     subject = serializers.SlugRelatedField(slug_field='name', queryset=Subject.objects.all())
     year = serializers.SlugRelatedField(slug_field='year', queryset=Year.objects.all())
-
+    
     class Meta:
         model = TestInstance
         fields = [
             'id', 
+            'duration',
             'user', 
             'exam', 
             'subject', 
