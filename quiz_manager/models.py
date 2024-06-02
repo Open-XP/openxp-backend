@@ -9,8 +9,10 @@ from exams.waec_model import (
 from datetime import timezone
 from datetime import timedelta
 
+waec_instance = WAEC()
 class TestInstance(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='test_instances')
+    duration = waec_instance.duration
     exam = models.ForeignKey(WAEC, on_delete=models.CASCADE)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
     year = models.ForeignKey(Year, on_delete=models.CASCADE)
