@@ -1,34 +1,16 @@
 version: '3.8'
 
 services:
-  frontend:
-    image: openxp-frontend:latest
-    container_name: openxp-frontend
+  web:
+    build:
+      context: .  # Uses the Dockerfile in the current directory
+      dockerfile: Dockerfile  # Specifies the Dockerfile name if it's not the default 'Dockerfile'
     ports:
-      - "80:3000"  # Map port 3000 of the container to port 80 on the host
-    depends_on:
-      - backend
-    networks:
-      - openxp-net
-
-  backend:
-    image: openxp-backend:latest
-    container_name: openxp-backend
-    environment:
-      - PYTHONUNBUFFERED=1
-      - PYTHONDONTWRITEBYTECODE=1
-      - DJANGO_SETTINGS_MODULE=your_project.settings.development  # Set the appropriate Django settings module
-    ports:
-      - "8000:8000"  # Expose the backend on port 8000 of the host
+      - "8000:8000"  # Maps port 8000 of the container to port 8000 on the host
     volumes:
-      - backend-data:/usr/src/app  # Mount the backend directory for development changes
-    networks:
-      - openxp-net
-
-volumes:
-  backend-data:  # This volume stores backend data to persist across container recreations
-
-networks:
-  openxp-net:
-    driver: bridge
+      - .:/usr/src/app  # Mounts the current directory to the container's working directory
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+    command: gunicorn --bind 0.0.0.0:8000 backend.wsgi:application
 
