@@ -1,6 +1,5 @@
 aiohttp==3.9.3
 aiosignal==1.3.1
-docker==4.4.4
 amqp==5.1.1
 annotated-types==0.6.0
 anyio==4.3.0
@@ -26,6 +25,7 @@ cryptography==41.0.5
 daphne==4.0.0
 dataclasses-json==0.6.4
 decorator==4.4.2
+distro==1.9.0
 Django==4.2.7
 django-celery-results==2.5.1
 django-cors-headers==4.3.0
@@ -41,6 +41,9 @@ drf-yasg==1.21.7
 dynaconf==3.2.5
 frozenlist==1.4.1
 greenlet==3.0.3
+h11==0.14.0
+httpcore==1.0.5
+httpx==0.27.0
 hvac==2.1.0
 hyperlink==21.0.0
 idna==3.4
@@ -67,18 +70,17 @@ multidict==6.0.5
 mypy-extensions==1.0.0
 mysqlclient==2.2.0
 numpy==1.26.1
+openai==1.31.0
 orjson==3.9.15
 packaging==23.2
 Pillow==10.0.1
 proglog==0.1.10
 prompt-toolkit==3.0.39
-#psycopg2-binary
-#psycopg2==2.9.9
+psycopg2==2.9.9
 pyasn1==0.5.0
 pyasn1-modules==0.3.0
 pycparser==2.21
 pydantic==2.6.4
-gunicorn>=20.0.4
 pydantic_core==2.16.3
 PyJWT==2.8.0
 pyOpenSSL==23.3.0
@@ -99,14 +101,13 @@ sqlparse==0.4.4
 tenacity==8.2.3
 tqdm==4.66.1
 Twisted==23.10.0
-# twisted-iocpsupport==1.0.4
+twisted-iocpsupport==1.0.4
 txaio==23.1.1
 typing-inspect==0.9.0
 typing_extensions==4.8.0
 tzdata==2023.3
 uritemplate==4.1.1
-urllib3==1.26.5
-#urllib3<2
+urllib3==2.0.7
 validators==0.23.2
 vine==5.0.0
 wcwidth==0.2.9
