@@ -58,6 +58,7 @@ class UserScoreSerializer(serializers.ModelSerializer):
         model = UserScore
         fields = [
             'id',
+            'total_questions',
             'total_time',
             'score',
             'test_instance',
