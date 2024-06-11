@@ -56,6 +56,7 @@ class UserScore(models.Model):
     test_instance = models.ForeignKey(TestInstance, on_delete=models.CASCADE, related_name='user_scores')
     correct_questions = models.ManyToManyField(Questions, related_name='correct_in_scores', blank=True)
     incorrect_questions = models.ManyToManyField(Questions, related_name='incorrect_in_scores', blank=True)
+    total_questions = waec_instance.total_questions
 
     def __str__(self):
         return f"Score for {self.test_instance}: {self.score}"
