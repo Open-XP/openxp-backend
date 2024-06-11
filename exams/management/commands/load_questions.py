@@ -68,3 +68,5 @@ class Command(BaseCommand):
         
         
 #Example of usage python manage.py load_questions exams\management\commands\waec_appended_multiple_choice_questions.txt "Agriculture" "2000"
+
+# python manage.py load_questions exams\management\commands\waec_agric_2000.txt "Agriculture" "2000"
