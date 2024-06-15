@@ -22,8 +22,11 @@ RUN pip install --upgrade pip && pip install -r w_requirements.txt
 # Copy the project code
 COPY . .
 
+# Collect static files
+RUN python manage.py collectstatic --noinput
+
 # Expose the port the app runs on
 EXPOSE 8000
 
 # Command to run the application
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "Backend.backend.wsgi:application"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "backend.wsgi:application"]
