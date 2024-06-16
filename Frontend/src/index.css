@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+.divIndicator {
+    transition: visibility 0.3s, opacity 0.3s ease;
+    visibility: hidden;  /* starts as hidden */
+    opacity: 0;          /* starts as fully transparent */
+  }
+  
+  .divIndicator.visible {
+    visibility: visible;
+    opacity: 1;
+  }
+  
+  .rotateIcon {
+    transition: transform 200ms ease-in-out;
+  }
+
+
+
+  

@@ -1,0 +1,7 @@
+version: '3.8'
+services:
+  frontend:
+    image: openxp-frontend:latest
+    ports:
+      - "8000:3000"
+    container_name: openxp_frontend
