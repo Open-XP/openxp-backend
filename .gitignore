@@ -168,4 +168,7 @@ cython_debug/
 # Questions
 waec_*_*.txt
 
+# Static files
+staticfiles/
+
 # End of https://www.toptal.com/developers/gitignore/api/django
