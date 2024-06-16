@@ -16,11 +16,12 @@ RUN apt-get update && apt-get install -y \
     libssl-dev
 
 # Copy the backend requirements file and install Python dependencies
-COPY Backend/requirements.txt /app/backend/
-RUN pip install --upgrade pip && pip install -r requirements.txt
+COPY w_requirements.txt /app/backend/requirements.txt
+RUN pip install --upgrade pip && pip install -r w_requirements.txt
 
 # Copy the backend source code
-COPY Backend/ /app/backend/
+COPY Backend/backend /app/backend/
+COPY manage.py /app/backend/
 
 # ---------------------
 # Frontend Build Stage
