@@ -52,7 +52,8 @@ INSTALLED_APPS = [
     'django_celery_results',
     'rest_framework_simplejwt.token_blacklist',
     'django_filters',
-    'quiz_manager'
+    'quiz_manager',
+    'Frontend'
 ]
 
 MIDDLEWARE = [
@@ -98,7 +99,7 @@ ROOT_URLCONF = 'backend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'Frontend/build'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -117,23 +118,23 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-
 DATABASES = {
     'default': {
-        'ENGINE': config('DB_ENGINE'),
-        'NAME': config('DB_NAME'),
-        'USER': config('DB_USER'),
-        'PASSWORD': config('DB_PASSWORD'),
-        'HOST': config('DB_HOST'),
-        'PORT': config('DB_PORT'),
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': config('DB_ENGINE'),
+#         'NAME': config('DB_NAME'),
+#         'USER': config('DB_USER'),
+#         'PASSWORD': config('DB_PASSWORD'),
+#         'HOST': config('DB_HOST'),
+#         'PORT': config('DB_PORT'),
+#     }
+# }
 
 
 # Password validation
@@ -171,19 +172,28 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
-STATIC_URL = 'staticfiles/'
+# Base directory of the project
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# URL to use when referring to static files located in STATIC_ROOT
+STATIC_URL = '/static/'
 
-STATICFILES_DIRS = [BASE_DIR / 'static']
-
+# The directory where collectstatic will collect static files for production
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
+# Directories where Django will search for additional static files in development
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'Frontend/build/static')]
+
+# URL that handles the media served from MEDIA_ROOT
 MEDIA_URL = '/media/'
 
+# Absolute filesystem path to the directory that will hold user-uploaded files
 MEDIA_ROOT = os.path.join(BASE_DIR, 'staticfiles', 'media')
 
+# Directory for Celery logs
 log_directory = os.path.join(BASE_DIR, 'static', 'celery_logs')
 
+# Create the log directory if it does not exist
 if not os.path.exists(log_directory):
     os.makedirs(log_directory)
 
