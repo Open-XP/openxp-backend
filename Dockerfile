@@ -52,8 +52,13 @@ ENV PYTHONUNBUFFERED 1
 # Set the working directory in the container
 WORKDIR /app
 
+# Copy the backend and frontend build from the respective build stages
+COPY --from=backend-builder /app/backend /app/backend
+COPY --from=frontend-builder /app/frontend/build /app/frontend/build
+
 # Collect static files
-RUN python /app/backend/manage.py collectstatic --noinput
+WORKDIR /app/backend
+RUN python manage.py collectstatic --noinput
 
 # Expose the port the app runs on
 EXPOSE 8000
