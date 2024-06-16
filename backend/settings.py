@@ -28,10 +28,9 @@ SECRET_KEY = SECRET_KEY = config('SECRET_KEY', default='default_secret_key')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='127.0.0.1', cast=lambda v: [s.strip() for s in v.split(',')])
-CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='', cast=lambda v: [s.strip() for s in v.split(',')] if v else [])
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost', cast=Csv())
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='', cast=Csv())
 CORS_ORIGIN_ALLOW_ALL = True
-
 
 # Application definition
 
