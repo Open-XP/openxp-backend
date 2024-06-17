@@ -53,11 +53,13 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'django_filters',
     'quiz_manager',
-    'Frontend'
+    'Frontend',
+    'main'
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -67,6 +69,9 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware', #corsheaders
     'django.middleware.common.CommonMiddleware' #corsheaders
 ]
+
+# Whitenoise configuration
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
 REST_FRAMEWORK = {
@@ -173,7 +178,6 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 # Base directory of the project
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # URL to use when referring to static files located in STATIC_ROOT
 STATIC_URL = '/static/'
