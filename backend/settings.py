@@ -186,7 +186,7 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Directories where Django will search for additional static files in development
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'staticfiles')]
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'Frontend/build/static')]
 
 # URL that handles the media served from MEDIA_ROOT
 MEDIA_URL = '/media/'
