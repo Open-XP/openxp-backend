@@ -8,7 +8,7 @@ urlpatterns = [
     path('api/auth/', include('userauth.urls')),
     path('api/exams/', include('exams.urls')),
     path('api/quiz/', include('quiz_manager.urls')),
-    path('', include('main.urls')),
+    # path('', include('main.urls')),
 ]
 
 # if settings.DEBUG:
