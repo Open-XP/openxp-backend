@@ -80,6 +80,45 @@ class ProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = ['username', 'bio', 'profile_picture']
         read_only_fields = ('username',  'rating', 'profile_picture')
+        
+        
+class PasswordResetSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    
+    class Meta:
+        model = User
+        
+        fields = ['email']
+        extra_kwargs = {'email': {'required': True},}
+
+    def validate_email(self, value):
+        try:
+            user = User.objects.get(email=value)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("User with this email does not exist.")
+        return value
+        
+        
+class SetNewPasswordSerializer(serializers.Serializer):
+    password = serializers.CharField(min_length=8, write_only=True)
+    confirm_password = serializers.CharField(min_length=8, write_only=True)
+    
+    class Meta:
+        model = User
+        fields = ['password', 'confirm_password']
+        extra_kwargs = {
+            'password': {'write_only': True, 'min_length': 8, 'required': True},
+            'confirm_password': {'write_only': True, 'min_length': 8, 'required': True},
+        }
+    
+    def validate(self, data):
+        password = data.get('password')
+        confirm_password = data.pop('confirm_password', None)
+        
+        if password != confirm_password:
+            raise serializers.ValidationError("Passwords do not match.")
+        
+        return data
     
     
     
