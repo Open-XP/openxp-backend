@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'django_filters',
     'quiz_manager',
     'Frontend',
+    'examscheduler',
     # 'main'
 ]
 
