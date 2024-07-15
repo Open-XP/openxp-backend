@@ -8,6 +8,7 @@ urlpatterns = [
     path('api/auth/', include('userauth.urls')),
     path('api/exams/', include('exams.urls')),
     path('api/quiz/', include('quiz_manager.urls')),
+    path('api/examscheduler/', include('examscheduler.urls')),
     # path('', include('main.urls')),
 ]
 
