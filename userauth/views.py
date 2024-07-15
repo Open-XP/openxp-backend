@@ -145,7 +145,7 @@ class PasswordResetConfirmAPIView(APIView):
                 return Response({"message": "Password has been reset successfully."}, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
-            raise ValidationError({"Invalid token or user ID"})
+            raise ValidationError({"message" :"Invalid token or user ID"})
 
 
 class ResendVerifyEmailAPIView(generics.CreateAPIView):
