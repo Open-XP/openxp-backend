@@ -8,7 +8,8 @@ class ExamScheduler(models.Model):
     subject = models.CharField(max_length=100)
     date = models.DateField()
     time = models.TimeField()
-    exam_type = models.CharField(max_length=100) 
+    exam_type = models.CharField(max_length=100)
+    description = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.user} - {self.subject} - {self.date} - {self.exam_type}"
