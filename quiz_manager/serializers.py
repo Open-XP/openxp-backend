@@ -53,19 +53,24 @@ class UserScoreSerializer(serializers.ModelSerializer):
     correct_questions = QuestionSerializer(many=True, read_only=True)
     incorrect_questions = QuestionSerializer(many=True, read_only=True)
     total_time = FormattedDurationField()
+    user = serializers.SerializerMethodField()
 
     class Meta:
         model = UserScore
         fields = [
             'id',
+            'user',
             'total_questions',
             'total_time',
             'score',
+            'date',
             'test_instance',
             'correct_questions',
             'incorrect_questions',
-            'total_time',
-            ]
+        ]
+
+    def get_user(self, obj):
+        return obj.test_instance.user.id  
         
 
 class TotalStudyTimeSerializer(serializers.ModelSerializer):
@@ -92,3 +97,6 @@ class SubjectSerializer(serializers.ModelSerializer):
         # Get unique years associated with the subject's questions.
         years = Year.objects.filter(questions__subject=obj).distinct()
         return YearSerializer(years, many=True).data
+    
+    
+
