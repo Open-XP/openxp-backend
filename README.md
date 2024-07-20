@@ -4,6 +4,22 @@ Openxp is not just a backend server but a fullstack web application. The fronten
 
 If you want to contribute to openxp send a PR and I will look at it as soon as I can. In the mean time you can use our web application by visiting [openxp](http://openxp.study/).
 
+# Testing Out the App with a Demo Account
+
+You can try out the app using the follow credentials for testing:
+
+### User Email
+
+```
+test@gmail.com
+```
+
+### User Password
+
+```
+testing@testing
+```
+
 # Getting Started With Openxp Backend
 
 ## Cloning Our Repository into Our Local Machine
