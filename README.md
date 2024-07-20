@@ -1,3 +1,9 @@
+# Overview
+
+Openxp is not just a backend server but a fullstack web application. The frontend service is hosted in its own repository for the purpose of abstracting backend and [fronten](https://github.com/Open-XP/openxp-frontend) services from one another and development can be done independenty of each other. You can check out the frontend repository (here)[https://github.com/Open-XP/openxp-frontend].
+
+If you want to contribute to openxp send a PR and I will look at it as soon as I can. In the mean time you can use our web application by visiting (openxp)[http://openxp.study/].
+
 # Getting Started With Openxp Backend
 
 ## Cloning Our Repository into Our Local Machine
