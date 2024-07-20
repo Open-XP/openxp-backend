@@ -1,0 +1,9 @@
+[Unit]
+Description=uwsgi emperor for open web app
+After=network.target
+[Service]
+User=ubuntu
+Restart=always
+ExecStart=/home/ubuntu/openxp-backend/env/bin/uwsgi --emperor /home/ubuntu/openxp-backend/env/md/vassals --uid www-data --gid www-data
+[Install]
+WantedBy=multi-user.target
