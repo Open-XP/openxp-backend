@@ -6,6 +6,9 @@ from django.utils import timezone
 from datetime import timedelta
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Sum
+from django.db.models import Avg, Count, F, ExpressionWrapper, FloatField
+from django.db.models.functions import TruncDay, TruncWeek, TruncMonth
+from rest_framework.views import APIView
 from .models import (
     TestInstance, 
     Questions, 
@@ -169,7 +172,7 @@ class CompleteTestAPIView(generics.UpdateAPIView):
         serializer.save(end_time=timezone.now(), is_completed=True)
 
         return Response({'message': 'Test completed successfully'}, status=status.HTTP_200_OK)
-
+    
 class UserScoreAPIView(generics.RetrieveAPIView):
     serializer_class = UserScoreSerializer
     permission_classes = [IsAuthenticated]
@@ -254,3 +257,57 @@ class TotalStudyTimeAPIView(generics.RetrieveAPIView):
 class SubjectListAPIView(generics.ListAPIView):
     queryset = Subject.objects.all()
     serializer_class = SubjectSerializer
+    
+class AverageScoreView(APIView):
+    def get(self, request, *args, **kwargs):
+        user = self.request.user
+        filter_type = request.query_params.get('filter', 'day')
+
+        # Calculate total_questions
+        total_questions_expr = F('correct_questions') + F('incorrect_questions')
+
+        if filter_type == 'day':
+            scores = UserScore.objects.filter(test_instance__user=user).annotate(
+                day=TruncDay('date'),
+                total_questions=total_questions_expr
+            ).values('day').annotate(
+                average_score=ExpressionWrapper(
+                    Avg('score') * Avg('total_questions') / 100,
+                    output_field=FloatField()
+                ),
+                total_tests=Count('test_instance')
+            ).order_by('day')
+        elif filter_type == 'week':
+            scores = UserScore.objects.filter(test_instance__user=user).annotate(
+                week=TruncWeek('date'),
+                total_questions=total_questions_expr
+            ).values('week').annotate(
+                average_score=ExpressionWrapper(
+                    Avg('score') * Avg('total_questions') / 100,
+                    output_field=FloatField()
+                ),
+                total_tests=Count('test_instance')
+            ).order_by('week')
+        elif filter_type == 'month':
+            scores = UserScore.objects.filter(test_instance__user=user).annotate(
+                month=TruncMonth('date'),
+                total_questions=total_questions_expr
+            ).values('month').annotate(
+                average_score=ExpressionWrapper(
+                    Avg('score') * Avg('total_questions') / 100,
+                    output_field=FloatField()
+                ),
+                total_tests=Count('test_instance')
+            ).order_by('month')
+        else:
+            return Response({"error": "Invalid filter type"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Convert the QuerySet to a list and process the average_score field
+        processed_scores = [
+            {
+                **score,
+                'average_score': f"{round(score['average_score'], 2)}%" if score['average_score'] is not None else "0%"
+            } for score in scores
+        ]
+
+        return Response(processed_scores, status=status.HTTP_200_OK)
