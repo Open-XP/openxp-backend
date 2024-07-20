@@ -51,15 +51,17 @@ class UserAnswer(models.Model):
 
     
 class UserScore(models.Model):
+    test_instance = models.OneToOneField(TestInstance, on_delete=models.CASCADE, related_name='user_score')
     score = models.IntegerField(null=True, blank=True)
     total_time = models.CharField(max_length=50, null=True, blank=True)
-    test_instance = models.ForeignKey(TestInstance, on_delete=models.CASCADE, related_name='user_scores')
+    date = models.DateField(auto_now_add=True, null=True, blank=True)
     correct_questions = models.ManyToManyField(Questions, related_name='correct_in_scores', blank=True)
     incorrect_questions = models.ManyToManyField(Questions, related_name='incorrect_in_scores', blank=True)
     total_questions = waec_instance.total_questions
 
     def __str__(self):
         return f"Score for {self.test_instance}: {self.score}"
+
 
 class TotalStudyTime(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -68,3 +70,4 @@ class TotalStudyTime(models.Model):
 
     def __str__(self):
         return f"Total study time for {self.user.username}: {self.overall_study_time}"
+    
