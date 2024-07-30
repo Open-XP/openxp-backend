@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'django_filters',
     'quiz_manager',
     'examscheduler',
+    'ai'
     # 'main'
 ]
 
@@ -104,7 +105,7 @@ ROOT_URLCONF = 'backend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        # 'DIRS': [BASE_DIR / 'Frontend/build'],
+        'DIRS': [BASE_DIR / 'openxp-frontend/build'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -186,7 +187,7 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Directories where Django will search for additional static files in development
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'Frontend/build/static')]
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'openxp-frontend/build/static')]
 
 # URL that handles the media served from MEDIA_ROOT
 MEDIA_URL = '/media/'
@@ -241,3 +242,7 @@ CELERY_RESULT_BACKEND = 'django-db'
 
 
 APPEND_SLASH = False
+
+
+# Falcon
+AI71_API_KEY = config('AI71_API_KEY')
