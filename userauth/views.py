@@ -12,6 +12,7 @@ from rest_framework.exceptions import ValidationError
 from django.core.mail import send_mail
 from rest_framework.views import APIView
 from django.contrib.auth import authenticate
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from .models import User, OTP
 from .serializers import (
     RegistrationSerializer, 
@@ -102,21 +103,20 @@ class PasswordResetAPIView(generics.GenericAPIView):
                 token = token_generator.make_token(user)
                 uidb64 = urlsafe_base64_encode(smart_bytes(user.id))
                 
-                # Frontend URL for password reset confirmation
-                # Update 'http://frontend.com' to the actual domain of your frontend application
+                
                 absurl = f'http://localhost:3000/confirm-password-reset/{uidb64}/{token}/'
                 
                 email_body = f'Hello, \nUse the link below to reset your password \n{absurl}'
                 send_mail(
                     'Password Reset Request',
                     email_body,
-                    'noreply@yourdomain.com',  # Update with your actual email
+                    'noreply@yourdomain.com',  
                     [email],
                     fail_silently=False,
                 )
                 return Response({'message': 'We have sent you a link to reset your password'}, status=status.HTTP_200_OK)
             else:
-                # Consider handling the case where the user does not exist
+                
                 pass
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -124,7 +124,7 @@ class PasswordResetAPIView(generics.GenericAPIView):
 # Password Reset Confirmation APIView
 class PasswordResetConfirmAPIView(APIView):
     permission_classes = [AllowAny]
-    serializer_class = SetNewPasswordSerializer  # Keep your serializer for handling the password reset logic
+    serializer_class = SetNewPasswordSerializer  
 
     def post(self, request, *args, **kwargs):
         uidb64 = kwargs.get('uidb64')
@@ -137,7 +137,7 @@ class PasswordResetConfirmAPIView(APIView):
             user = None
 
         if user is not None and default_token_generator.check_token(user, token):
-            serializer = self.serializer_class(data=request.data)  # Use the serializer to validate and save the new password
+            serializer = self.serializer_class(data=request.data)  
             
             if serializer.is_valid():
                 user.set_password(serializer.validated_data['password'])
@@ -200,20 +200,38 @@ class UserLoginAPIView(generics.CreateAPIView):
                     "error": "Invalid Credentials"
                 }, status=status.HTTP_401_UNAUTHORIZED)
 
-            token, _ = Token.objects.get_or_create(user=user)
-            return Response({'token': token.key}, status=status.HTTP_200_OK)
+            
+            refresh = RefreshToken.for_user(user)
+            access_token = str(refresh.access_token)
+            refresh_token = str(refresh)
+
+            return Response({
+                'access': access_token,
+                'refresh': refresh_token,
+            }, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
 class UserLogoutAPIView(APIView):
-    
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def post(self, request):
         try:
-            request.user.auth_token.delete()
-            return Response({"message": "Logout successful."}, status=status.HTTP_204_NO_CONTENT)
+            refresh_token = request.data.get('refresh') if request.data else None
+            if refresh_token:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+            else:
+
+                tokens = OutstandingToken.objects.filter(user_id=request.user.id)
+                for token in tokens:
+                    BlacklistedToken.objects.get_or_create(token=token)
+
+            # Clear the user's session
+            request.session.flush()
+
+            return Response({"message": "Logout successful."}, status=status.HTTP_200_OK)
         except Exception as e:
-            # Consider logging the exception here for debugging purposes
+            print(f"Logout error: {str(e)}")
             return Response({"error": "There was an error during logout. Please try again."}, status=status.HTTP_400_BAD_REQUEST)
