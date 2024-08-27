@@ -1,3 +1,4 @@
+# View.py
 from django.http import JsonResponse
 from rest_framework.views import APIView
 from rest_framework import generics, status
@@ -10,6 +11,8 @@ from .serializers import ChatSessionSerializer, ChatMessageSerializer
 import random
 import string
 from datetime import datetime
+import re
+
 
 class ExplainAnswersView(APIView):
     permission_classes = [IsAuthenticated]
@@ -89,7 +92,12 @@ class CareerSuggestionsView(APIView):
     def get(self, request, *args, **kwargs):
         random_seed = ''.join(random.choices(string.ascii_letters + string.digits, k=6))
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-        prompt = f"Suggest four career-related questions that high school students who are about to get into higher education can ask about different career paths. Each question should be a short and concise question, such as 'Can you explain...', 'How do I...', etc. ({random_seed} - {timestamp})"
+        prompt = (
+            f"Please provide exactly three concise career-related questions for high school students "
+            f"who are about to enter higher education. Each question should be a short header or question, "
+            f"such as 'Can you', 'How do I', etc. The questions should be numbered 1, 2, and 3, and each on a new line. "
+            f"Ensure each question is complete and clear. ({random_seed} - {timestamp})"
+        )
         
         messages = [
             {"role": "system", "content": "You are an expert in career counseling for high school students transitioning to higher education."},
@@ -100,15 +108,28 @@ class CareerSuggestionsView(APIView):
 
         if "choices" in ai_response:
             response_content = ai_response['choices'][0]['message']['content']
-            # Split the response by lines and filter out empty lines
-            questions = [question.strip() for question in response_content.split('\n') if question.strip()]
-            # Ensure we return exactly 4 questions
-            if len(questions) >= 4:
-                questions = questions[:4]
-            else:
-                error_message = "AI did not return enough questions"
-                return JsonResponse({'error': error_message, 'questions_returned': questions}, status=500)
+
+            # Use regular expressions to extract numbered questions
+            questions = re.findall(r'\d+\.\s*(.*)', response_content)
+
+            # Check for incomplete questions and retry if necessary
+            if len(questions) < 3 or any(len(q.split()) < 5 for q in questions):
+                error_message = "AI did not return enough complete topics"
+                return JsonResponse({'error': error_message, 'topics_returned': questions}, status=500)
+
+            # Ensure we return exactly 3 questions
+            questions = questions[:3]
             return JsonResponse({'career_suggestions': questions}, status=200)
         else:
             error_message = ai_response.get('error', 'Unknown error')
             return JsonResponse({'error': error_message}, status=500)
+        
+        
+class ChatSessionDeleteView(generics.DestroyAPIView):
+    serializer_class = ChatSessionSerializer
+    lookup_field = 'id'
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Only return chat sessions belonging to the authenticated user
+        return ChatSession.objects.filter(user=self.request.user)
