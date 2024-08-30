@@ -11,12 +11,13 @@ from .views import (RegistrationAPIView,
                     UserLoginAPIView,
                     UserLogoutAPIView,
                     PasswordResetAPIView,
-                    PasswordResetConfirmAPIView
+                    PasswordResetConfirmAPIView,
+                    CustomTokenRefreshView
                     )
 
 urlpatterns = [
     path('user/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('user/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('user/token/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
     path('user/register/', RegistrationAPIView.as_view(), name='register'),
     path('user/verify-email/', VerifyEmailAPIView.as_view(), name='verify_email'),
     path('user/resend-verify-email/', ResendVerifyEmailAPIView.as_view(), name='resend_verify_email'),
