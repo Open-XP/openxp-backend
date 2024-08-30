@@ -18,6 +18,6 @@ cd ..
 
 # Deploy the frontend using rsync, excluding node_modules and environment variable files
 echo "Deploying frontend"
-rsync -avz --exclude 'node_modules' --exclude 'venv' -e "ssh -i ~/.ssh/school -o StrictHostKeyChecking=no" ./ mannie@52.91.131.166:~/openxp-backend
+rsync -avz --exclude 'node_modules' --exclude 'venv' --exclude 'db.sqlite3' -e "ssh -i ~/.ssh/school -o StrictHostKeyChecking=no" ./ mannie@52.91.131.166:~/openxp-backend
 
 echo "App deployed"
