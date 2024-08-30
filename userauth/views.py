@@ -13,6 +13,7 @@ from django.core.mail import send_mail
 from rest_framework.views import APIView
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
+from rest_framework_simplejwt.views import TokenRefreshView
 from .models import User, OTP
 from .serializers import (
     RegistrationSerializer, 
@@ -214,24 +215,32 @@ class UserLoginAPIView(generics.CreateAPIView):
     
 
 class UserLogoutAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Allow any user to access this endpoint
 
     def post(self, request):
         try:
             refresh_token = request.data.get('refresh') if request.data else None
             if refresh_token:
-                token = RefreshToken(refresh_token)
-                token.blacklist()
-            else:
-
-                tokens = OutstandingToken.objects.filter(user_id=request.user.id)
-                for token in tokens:
-                    BlacklistedToken.objects.get_or_create(token=token)
-
-            # Clear the user's session
-            request.session.flush()
-
+                try:
+                    token = RefreshToken(refresh_token)
+                    token.blacklist()
+                except Exception as e:
+                    # Token is invalid or already blacklisted
+                    pass
+            
+            # Always return a success message, even if token blacklisting fails
             return Response({"message": "Logout successful."}, status=status.HTTP_200_OK)
         except Exception as e:
             print(f"Logout error: {str(e)}")
-            return Response({"error": "There was an error during logout. Please try again."}, status=status.HTTP_400_BAD_REQUEST)
+            # Still return a success message to ensure the frontend completes logout
+            return Response({"message": "Logout completed."}, status=status.HTTP_200_OK)
+        
+        
+class CustomTokenRefreshView(TokenRefreshView):
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        if response.status_code == 200:
+            return response
+        else:
+            # If refresh fails, return a specific error
+            return Response({"error": "Token refresh failed"}, status=status.HTTP_401_UNAUTHORIZED)
