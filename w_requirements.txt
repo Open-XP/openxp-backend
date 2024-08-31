@@ -59,7 +59,7 @@ jsonpointer==2.4
 knox==0.1.14
 kombu==5.3.2
 langchain==0.1.12
-langchain-community==0.0.28
+langchain-community==0.2.9
 langchain-core==0.1.32
 langchain-text-splitters==0.0.1
 langsmith==0.1.26
