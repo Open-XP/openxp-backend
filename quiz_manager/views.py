@@ -262,12 +262,17 @@ class AverageScoreView(APIView):
     def get(self, request, *args, **kwargs):
         user = self.request.user
         filter_type = request.query_params.get('filter', 'day')
+        subject_name = request.query_params.get('subject', None)
 
-        # Calculate total_questions
+        queryset = UserScore.objects.filter(test_instance__user=user)
+
+        if subject_name:
+            queryset = queryset.filter(test_instance__subject__name=subject_name)
+
         total_questions_expr = F('correct_questions') + F('incorrect_questions')
 
         if filter_type == 'day':
-            scores = UserScore.objects.filter(test_instance__user=user).annotate(
+            scores = queryset.annotate(
                 day=TruncDay('date'),
                 total_questions=total_questions_expr
             ).values('day').annotate(
@@ -278,7 +283,7 @@ class AverageScoreView(APIView):
                 total_tests=Count('test_instance')
             ).order_by('day')
         elif filter_type == 'week':
-            scores = UserScore.objects.filter(test_instance__user=user).annotate(
+            scores = queryset.annotate(
                 week=TruncWeek('date'),
                 total_questions=total_questions_expr
             ).values('week').annotate(
@@ -289,7 +294,7 @@ class AverageScoreView(APIView):
                 total_tests=Count('test_instance')
             ).order_by('week')
         elif filter_type == 'month':
-            scores = UserScore.objects.filter(test_instance__user=user).annotate(
+            scores = queryset.annotate(
                 month=TruncMonth('date'),
                 total_questions=total_questions_expr
             ).values('month').annotate(
@@ -302,7 +307,6 @@ class AverageScoreView(APIView):
         else:
             return Response({"error": "Invalid filter type"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Convert the QuerySet to a list and process the average_score field
         processed_scores = [
             {
                 **score,
