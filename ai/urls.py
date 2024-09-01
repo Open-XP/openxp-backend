@@ -5,7 +5,8 @@ from .views import (
     ChatSessionDetailView,
     ChatView,
     CareerSuggestionsView,
-    ChatSessionDeleteView
+    ChatSessionDeleteView,
+    GenerateQuestionsView
     )
 
 urlpatterns = [
@@ -15,4 +16,5 @@ urlpatterns = [
     path('sessions/<int:id>/', ChatSessionDetailView.as_view(), name='chat_session_detail'),
     path('sessions/delete/<int:id>/', ChatSessionDeleteView.as_view(), name='delete_chat_session'),
      path('career-suggestions/', CareerSuggestionsView.as_view(), name='career-suggestions'),
+     path('generate-questions/', GenerateQuestionsView.as_view(), name='generate_questions'),
 ]
