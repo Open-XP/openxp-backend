@@ -251,15 +251,14 @@ class GenerateLearningContentContainerView(APIView):
             container = serializer.save(user=request.user)
             return Response(GenerateLearningContentContainerSerializer(container).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def get(self, request, *args, **kwargs):
-        container_id = request.query_params.get('id')
-        try:
-            container = GenerateLearningContentContainer.objects.get(id=container_id, user=request.user)
-            return Response(GenerateLearningContentContainerSerializer(container).data, status=status.HTTP_200_OK)
-        except GenerateLearningContentContainer.DoesNotExist:
-            return Response({"error": "Learning content container not found."}, status=status.HTTP_404_NOT_FOUND)
-
+    
+class RetrieveLearningContentContainerView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, learning_content_container_id, *args, **kwargs):
+        container = get_object_or_404(GenerateLearningContentContainer, id=learning_content_container_id, user=request.user)
+        return Response(GenerateLearningContentContainerSerializer(container).data, status=status.HTTP_200_OK)
+       
 class GenerateSpecificContentView(APIView):
     permission_classes = [IsAuthenticated]
 
