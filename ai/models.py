@@ -42,6 +42,7 @@ class GenerateLearningContentContainer(models.Model):
     learning_objectives = models.JSONField(default=dict, blank=True)
     dynamic_content = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    is_completed = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Learning Content for {self.subject.name} - {self.topic.name} ({self.grade} grade)"
@@ -79,6 +80,7 @@ class TestInstance(models.Model):
     score = models.FloatField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)
+    is_completed = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Test Instance for {self.user.username} on {self.topic.name} - Score: {self.score if self.score else 'Not completed'}"
