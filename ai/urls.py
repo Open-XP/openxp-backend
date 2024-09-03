@@ -13,6 +13,8 @@ from .views import (
     ListQuestionsView,
     TestInstanceQuestionsView,
     RetrieveLearningContentContainerView,
+    DeleteLearningContentContainerView,
+    SubmitAnswerView,
     )
 
 urlpatterns = [
@@ -29,4 +31,6 @@ urlpatterns = [
     path('generate-questions-create-test/', GenerateQuestionsAndCreateTestView.as_view(), name='generate_questions_create_test'),
     path('generated-questions/', ListQuestionsView.as_view(), name='list_questions'),
     path('generated-test-instance/<str:test_instance_id>/', TestInstanceQuestionsView.as_view(), name='test-instance-questions'),
+    path('delete-learning-content-container/<str:learning_content_container_id>/', DeleteLearningContentContainerView.as_view(), name='delete_learning_content_container'),
+    path('submit-answer/', SubmitAnswerView.as_view(), name='submit_answer'),
 ]
