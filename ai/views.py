@@ -297,7 +297,23 @@ class SubmitAnswerView(APIView):
             user_answer.save()
             
         return Response(UserAnswerSerializer(user_answer).data, status=status.HTTP_200_OK)
+    
+
+class CompleteGeneratedLearningContentView(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = GenerateLearningContentContainerSerializer
+    
+    def post(self, request, *args, **kwargs):
+        learning_content_container_id = request.data.get('learning_content_container_id')
         
+        if not learning_content_container_id:
+            return Response({"error": "learning_content_container_id is required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        container = get_object_or_404(GenerateLearningContentContainer, id=learning_content_container_id, user=request.user)
+        container.is_completed = True
+        container.save()
+        
+        return Response(GenerateLearningContentContainerSerializer(container).data, status=status.HTTP_200_OK)
         
 
 class DeleteLearningContentContainerView(APIView):
@@ -321,6 +337,10 @@ class GenerateSpecificContentView(APIView):
 
         try:
             container = GenerateLearningContentContainer.objects.get(id=container_id, user=request.user)
+            
+            if container.is_completed:
+                return Response({"error": "Lesson is already completed"}, status=status.HTTP_400_BAD_REQUEST)
+
 
             prompt = self.generate_prompt(container.subject, container.topic, container.grade, section_type)
             generated_content = call_ai_api(prompt)
