@@ -11,7 +11,8 @@ from .views import (
     GenerateDetailedNoteView,
     GenerateQuestionsAndCreateTestView,
     ListQuestionsView,
-    TestInstanceQuestionsView, 
+    TestInstanceQuestionsView,
+    RetrieveLearningContentContainerView,
     )
 
 urlpatterns = [
@@ -22,6 +23,7 @@ urlpatterns = [
     path('sessions/delete/<int:id>/', ChatSessionDeleteView.as_view(), name='delete_chat_session'),
     path('career-suggestions/', CareerSuggestionsView.as_view(), name='career-suggestions'),
     path('generate-learning-content/', GenerateLearningContentContainerView.as_view(), name='generate_learning_content_container'),
+    path('generate-learning-content/<str:learning_content_container_id>/', RetrieveLearningContentContainerView.as_view(), name='generate_learning_content_container'),
     path('generate-specific-content/', GenerateSpecificContentView.as_view(), name='generate_specific_content'),
     path('generate-detailed-note/', GenerateDetailedNoteView.as_view(), name='generate_detailed_note'),
     path('generate-questions-create-test/', GenerateQuestionsAndCreateTestView.as_view(), name='generate_questions_create_test'),
