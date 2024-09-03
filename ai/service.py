@@ -42,20 +42,20 @@ def call_ai_api(prompt):
         print(f"Unexpected error occurred: {err}")
         return {"error": "Unexpected error: Unable to connect to AI service"}
 
-import requests
-from django.conf import settings
 
 def call_ai_api2(messages):
     api_url = 'https://api.ai71.ai/v1/chat/completions'
     headers = {
         'Content-Type': 'application/json',
-        'Authorization': f'Bearer {settings.AI71_API_KEY}'
+         'Authorization': f'Bearer {settings.AI71_API_KEY}' 
     }
     data = {
         "model": "tiiuae/falcon-180b-chat",
         "messages": messages,
         
     }
+    
+    print('data:', data)
 
     try:
         response = requests.post(api_url, json=data, headers=headers, timeout=30)
