@@ -6,8 +6,9 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 import json
 from .service import call_ai_api, call_ai_api2
-from .models import ChatSession, ChatMessage
-from .serializers import ChatSessionSerializer, ChatMessageSerializer
+from django.shortcuts import get_object_or_404
+from .models import ChatSession, ChatMessage, GenerateLearningContentContainer, Subject, Topic, Question, TestInstance
+from .serializers import ChatSessionSerializer, ChatMessageSerializer, GenerateLearningContentContainerSerializer, QuestionSerializer, TestInstanceSerializer
 from rest_framework.response import Response
 import random
 import string
@@ -26,13 +27,15 @@ class ExplainAnswersView(APIView):
         try:
             data = json.loads(request.body)
             prompt = data.get('prompt')
+            print('Prompt:', prompt)
             if prompt:
                 ai_response = call_ai_api(prompt)
-                return JsonResponse(ai_response)
+                return JsonResponse(ai_response, safe=False)
             else:
                 return JsonResponse({"error": "No prompt provided"}, status=400)
         except json.JSONDecodeError:
             return JsonResponse({"error": "Invalid JSON"}, status=400)
+
 
 
 class ChatSessionListCreateView(generics.ListCreateAPIView):
@@ -40,11 +43,9 @@ class ChatSessionListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        # Only return chat sessions belonging to the authenticated user
         return ChatSession.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
-        # Set the user to the authenticated user
         serializer.save(user=self.request.user)
 
 class ChatSessionDetailView(generics.RetrieveAPIView):
@@ -53,7 +54,6 @@ class ChatSessionDetailView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        # Only return chat sessions belonging to the authenticated user
         return ChatSession.objects.filter(user=self.request.user)
 
 class ChatView(APIView):
@@ -114,15 +114,12 @@ class CareerSuggestionsView(APIView):
         if "choices" in ai_response:
             response_content = ai_response['choices'][0]['message']['content']
 
-            # Use regular expressions to extract numbered questions
             questions = re.findall(r'\d+\.\s*(.*)', response_content)
 
-            # Check for incomplete questions and retry if necessary
             if len(questions) < 3 or any(len(q.split()) < 5 for q in questions):
                 error_message = "AI did not return enough complete topics"
                 return JsonResponse({'error': error_message, 'topics_returned': questions}, status=500)
 
-            # Ensure we return exactly 3 questions
             questions = questions[:3]
             return JsonResponse({'career_suggestions': questions}, status=200)
         else:
@@ -136,84 +133,233 @@ class ChatSessionDeleteView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        # Only return chat sessions belonging to the authenticated user
         return ChatSession.objects.filter(user=self.request.user)
     
 
-class GenerateQuestionsView(APIView):
+class GenerateQuestionsAndCreateTestView(APIView):
     permission_classes = [IsAuthenticated]
-    parser_classes = [JSONParser]  
 
-    def post(self, request, *args, **kwargs): 
+    def post(self, request, *args, **kwargs):
+        subject_name = request.data.get('subject')
+        topic_name = request.data.get('topic')
+        num_questions = request.data.get('num_questions', 5)
+
         try:
-            # Parse JSON body
-            data = request.data
-            subject = data.get('subject')
-            topic = data.get('topic')
-            number = data.get('number')
-            difficulty = data.get('difficulty')
-            grade = data.get('grade')
-            student_id = data.get('student_id')
-            
-            if not all([subject, topic, number, difficulty, grade, student_id]):
-                return Response({'error': 'Missing required parameters'}, status=status.HTTP_400_BAD_REQUEST)
+            subject = get_object_or_404(Subject, name=subject_name)
+            topic = get_object_or_404(Topic, name=topic_name)
 
-            data_folder = f"{os.path.dirname(os.path.abspath(__file__))}/{subject}"
-            topic_file_path = f"{data_folder}/{topic}.txt"
-            qa_file_path = f"{data_folder}/qa.csv"
-            metadata_file_path = f"{data_folder}/metadata.csv"
-            topic_name = topic
-            
-            if not os.path.exists(topic_file_path):
-                return Response({'error': 'Topic not found'}, status=status.HTTP_404_NOT_FOUND)
-            
-            with open(topic_file_path, 'r') as file:
-                topics = file.readlines()
-            
-            prompt = f"""
-            Based on the topic '{topic}', please provide '{number}' questions with a difficulty level of '{difficulty}' for a student in '{grade}' 
-            from the subject topic.
-            The questions and answers should be in JSON format with keys 'question', 'options', 'answer' respectively.
-            """
-            
-            generated_questions = call_ai_api2(prompt)
-            
-            cleaned_text = generated_questions.replace('\n', '').replace('} {', '},{').replace('}{', '},{')
-            
-            if not cleaned_text.startswith('['):
-                cleaned_text = f"[{cleaned_text}]"
-                
-            questions_and_answers = json.loads(cleaned_text)
-            
-            unique_id = str(uuid.uuid4())
-            
-            new_entries = pd.DataFrame([
-                    {
-                        'unique_id': unique_id,
-                        'question_id': str(uuid.uuid4()),
-                        'topic': topic_name,
-                        'question': qa['question'],
-                        'answer': qa['answer']
-                    } for qa in questions_and_answers
-                ])
-            
-            new_entries.to_csv(qa_file_path, mode='a', header=False, index=False)
-            print('QA Dataframe:', new_entries)
-            
-            metadata = pd.DataFrame([{
-                    'student_id': student_id, 
-                    'unique_id': unique_id,
-                    'subject': subject,
-                    'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                }])
-            
-            metadata.to_csv(metadata_file_path, mode='a', header=False, index=False)
-            
-            questions_only = new_entries[['question_id', 'question']].to_dict(orient='records')
-            return Response({"questions": questions_only}, status=status.HTTP_200_OK)
-        
-        except json.JSONDecodeError as e:
-            return Response({"error": f"Error parsing generated questions: {str(e)}"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
-        
+            prompt = f"Generate '{num_questions}' unique questions for the topic '{topic.name}' under the subject '{subject.name}' with options A, B, C, D, and answer for each question"
+            generated_questions = call_ai_api(prompt)
+            print("AI Response:", generated_questions)
+
+            if "choices" in generated_questions:
+                generated_questions = generated_questions['choices'][0]['message']['content']
+                questions_list = self.parse_ai_response(generated_questions) 
+                print("Parsed Questions:", questions_list)
+            else:
+                return Response({"error": "Failed to generate questions from AI"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            questions = []
+            for generated_question in questions_list:
+                question_data = {
+                    "question_text": generated_question['question'],
+                    "option_a": generated_question['options']['A'],
+                    "option_b": generated_question['options']['B'],
+                    "option_c": generated_question['options']['C'],
+                    "option_d": generated_question['options']['D'],
+                    "correct_answer": generated_question['correct_answer'],
+                    "subject": subject.id,
+                    "topic": topic.id,
+                }
+                serializer = QuestionSerializer(data=question_data)
+                if serializer.is_valid():
+                    question = serializer.save()
+                    questions.append(question)
+                else:
+                    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            if not questions:
+                return Response({"error": "No valid questions were generated."}, status=status.HTTP_400_BAD_REQUEST)
+
+            test_instance = TestInstance.objects.create(user=request.user, subject=subject, topic=topic)
+            test_instance.questions.set(questions)
+            test_instance.save()
+
+            return Response({
+                "test_instance": TestInstanceSerializer(test_instance).data,
+                "message": f"{len(questions)} questions generated and test instance created successfully."
+            }, status=status.HTTP_201_CREATED)
+
+        except Subject.DoesNotExist:
+            return Response({"error": "Subject not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Topic.DoesNotExist:
+            return Response({"error": "Topic not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+    def parse_ai_response(self, response_text):
+        question_blocks = response_text.strip().split('\n\n')
+
+        parsed_questions = []
+
+        for block in question_blocks:
+            try:
+                lines = block.split('\n')
+
+                question_text = lines[0].strip()
+                
+                options = {}
+                for line in lines[1:5]:  
+                    option_key = line[0] 
+                    option_text = line[3:].strip()
+                    options[option_key] = option_text
+
+                correct_answer_line = lines[-1].strip()
+                correct_answer = correct_answer_line.split('Answer: ')[-1].strip()[0] 
+
+                # Add parsed question to list
+                parsed_questions.append({
+                    'question': question_text,
+                    'options': options,
+                    'correct_answer': correct_answer
+                })
+
+            except (IndexError, ValueError) as e:
+                print(f"Error parsing question block: {block}")
+                print(f"Error details: {e}")
+
+        return parsed_questions
+    
+
+class TestInstanceQuestionsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, test_instance_id, *args, **kwargs):
+        test_instance = get_object_or_404(TestInstance, id=test_instance_id, user=request.user)
+        questions = test_instance.questions.all()
+        serializer = QuestionSerializer(questions, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+            
+class GenerateLearningContentContainerView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        serializer = GenerateLearningContentContainerSerializer(data=request.data)
+        if serializer.is_valid():
+            container = serializer.save(user=request.user)
+            return Response(GenerateLearningContentContainerSerializer(container).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request, *args, **kwargs):
+        container_id = request.query_params.get('id')
+        try:
+            container = GenerateLearningContentContainer.objects.get(id=container_id, user=request.user)
+            return Response(GenerateLearningContentContainerSerializer(container).data, status=status.HTTP_200_OK)
+        except GenerateLearningContentContainer.DoesNotExist:
+            return Response({"error": "Learning content container not found."}, status=status.HTTP_404_NOT_FOUND)
+
+class GenerateSpecificContentView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        container_id = request.data.get('id')
+        section_type = request.data.get('section_type')
+
+        if not section_type:
+            return Response({"error": "The 'section_type' field is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            container = GenerateLearningContentContainer.objects.get(id=container_id, user=request.user)
+
+            prompt = self.generate_prompt(container.subject, container.topic, container.grade, section_type)
+            generated_content = call_ai_api(prompt)
+
+            if "choices" in generated_content:
+                generated_content = generated_content['choices'][0]['message']['content']
+
+            if section_type == 'introduction':
+                container.introduction = generated_content
+            elif section_type == 'learning_objectives':
+                self.store_learning_objectives(container, generated_content)
+            else:
+                container.dynamic_content[section_type] = generated_content
+
+            container.save()
+
+            return Response(GenerateLearningContentContainerSerializer(container).data, status=status.HTTP_200_OK)
+
+        except GenerateLearningContentContainer.DoesNotExist:
+            return Response({"error": "Learning content container not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    def store_learning_objectives(self, container, learning_objectives):
+        objectives = re.split(r'\n\d+\.\s*', learning_objectives)
+        objectives = [obj.strip() for obj in objectives if obj.strip()]
+        container.learning_objectives = {f'learning_objective_{i}': objective for i, objective in enumerate(objectives, start=1)}
+
+    def generate_prompt(self, subject, topic, grade, section_type):
+        if section_type == 'introduction':
+            return f"Provide a brief introduction to the topic '{topic.name}' under the subject '{subject.name}', suitable for a {grade}th-grade student."
+        elif section_type == 'learning_objectives':
+            return f"List 10 key learning objectives for the topic '{topic.name}' under the subject '{subject.name}', targeting a {grade}th-grade student."
+
+        
+class GenerateDetailedNoteView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        container_id = request.data.get('id')
+        learning_objective_key = request.data.get('learning_objective_key')
+
+        try:
+            container = GenerateLearningContentContainer.objects.get(id=container_id, user=request.user)
+
+            if learning_objective_key not in container.learning_objectives:
+                return Response({"error": f"Learning objective '{learning_objective_key}' not found."}, status=status.HTTP_404_NOT_FOUND)
+
+            objective = container.learning_objectives[learning_objective_key]
+            prompt = (
+                f"Provide detailed notes for the following learning objective: '{objective}' "
+                f"under the subject '{container.subject.name}' in a detailed but easy-to-understand manner for a {container.grade}th-grade student."
+            )
+            detailed_note = call_ai_api(prompt)
+            if "choices" in detailed_note:
+                detailed_note = detailed_note['choices'][0]['message']['content']
+
+            detailed_note_key = f'detailed_{learning_objective_key}'
+            container.dynamic_content[detailed_note_key] = detailed_note
+            container.save()
+
+            total_objectives = len(container.learning_objectives)
+            generated_objectives = len([key for key in container.dynamic_content.keys() if key.startswith('detailed_learning_objective_')])
+ 
+            response_data = {
+                "detailed_learning_body": {key: value for key, value in container.dynamic_content.items() if key.startswith('detailed_')},
+                "total_number_of_learning_objectives": total_objectives,
+                "learning_objectives_generated": generated_objectives
+            }
+
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except GenerateLearningContentContainer.DoesNotExist:
+            return Response({"error": "Learning content container not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+
+class ListQuestionsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        subject_id = request.query_params.get('subject')
+        topic_id = request.query_params.get('topic')
+
+        questions = Question.objects.all()
+
+        if subject_id:
+            questions = questions.filter(subject_id=subject_id)
+
+        if topic_id:
+            questions = questions.filter(topic_id=topic_id)
+
+        serializer = QuestionSerializer(questions, many=True)
+        return Response(serializer.data, status=200)
