@@ -7,17 +7,29 @@ from rest_framework.permissions import IsAuthenticated
 import json
 from .service import call_ai_api, call_ai_api2
 from django.shortcuts import get_object_or_404
-from .models import ChatSession, ChatMessage, GenerateLearningContentContainer, Subject, Topic, Question, TestInstance
-from .serializers import ChatSessionSerializer, ChatMessageSerializer, GenerateLearningContentContainerSerializer, QuestionSerializer, TestInstanceSerializer
+from .models import (
+                    ChatSession,
+                    ChatMessage, 
+                    GenerateLearningContentContainer, 
+                    Subject,
+                    Topic, 
+                    Question, 
+                    TestInstance,
+                    UserAnswer,
+                    )
+from .serializers import (
+                        ChatSessionSerializer, 
+                        ChatMessageSerializer, 
+                        GenerateLearningContentContainerSerializer, 
+                        QuestionSerializer, 
+                        TestInstanceSerializer, 
+                        UserAnswerSerializer,
+                        )
 from rest_framework.response import Response
 import random
 import string
 from datetime import datetime
 import re
-import os
-import pandas as pd
-import uuid
-from rest_framework.parsers import JSONParser
 
 
 class ExplainAnswersView(APIView):
@@ -252,13 +264,51 @@ class GenerateLearningContentContainerView(APIView):
             return Response(GenerateLearningContentContainerSerializer(container).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+
 class RetrieveLearningContentContainerView(APIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request, learning_content_container_id, *args, **kwargs):
         container = get_object_or_404(GenerateLearningContentContainer, id=learning_content_container_id, user=request.user)
         return Response(GenerateLearningContentContainerSerializer(container).data, status=status.HTTP_200_OK)
+    
+    
+class SubmitAnswerView(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserAnswerSerializer
+    
+    def post(self, request, *args, **kwargs):
+        test_instance_id = request.data.get('test_instance')
+        question_id = request.data.get('question')
+        selected_option = request.data.get('selected_option')
+        
+        test_instance = get_object_or_404(TestInstance, id=test_instance_id, user=request.user)
+        question = get_object_or_404(Question, id=question_id)
+        
+        user_answer, created = UserAnswer.objects.get_or_create(
+            test_instance=test_instance,
+            question=question,
+            defaults={'selected_option': selected_option}
+        )
+        
+        if not created:
+            user_answer.selected_option = selected_option
+            user_answer.is_correct = question.correct_answer == selected_option
+            user_answer.save()
+            
+        return Response(UserAnswerSerializer(user_answer).data, status=status.HTTP_200_OK)
+        
+        
+
+class DeleteLearningContentContainerView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def delete(self, request, learning_content_container_id, *args, **kwargs):
+        container = get_object_or_404(GenerateLearningContentContainer, id=learning_content_container_id, user=request.user)
+        container.delete()
+        return Response({"message": "Learning content container deleted successfully."}, status=status.HTTP_200_OK)
        
+
 class GenerateSpecificContentView(APIView):
     permission_classes = [IsAuthenticated]
 
