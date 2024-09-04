@@ -49,7 +49,6 @@ class ExplainAnswersView(APIView):
             return JsonResponse({"error": "Invalid JSON"}, status=400)
 
 
-
 class ChatSessionListCreateView(generics.ListCreateAPIView):
     serializer_class = ChatSessionSerializer
     permission_classes = [IsAuthenticated]
@@ -60,6 +59,7 @@ class ChatSessionListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+
 class ChatSessionDetailView(generics.RetrieveAPIView):
     serializer_class = ChatSessionSerializer
     lookup_field = 'id'
@@ -67,6 +67,7 @@ class ChatSessionDetailView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         return ChatSession.objects.filter(user=self.request.user)
+
 
 class ChatView(APIView):
     permission_classes = [IsAuthenticated]
@@ -272,7 +273,7 @@ class RetrieveLearningContentContainerView(APIView):
         container = get_object_or_404(GenerateLearningContentContainer, id=learning_content_container_id, user=request.user)
         return Response(GenerateLearningContentContainerSerializer(container).data, status=status.HTTP_200_OK)
     
-    
+
 class SubmitAnswerView(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = UserAnswerSerializer
@@ -432,3 +433,9 @@ class ListQuestionsView(APIView):
 
         serializer = QuestionSerializer(questions, many=True)
         return Response(serializer.data, status=200)
+    
+    
+class ExplainInAnEasyToUnderstandManner(APIView):
+    permission_classes = [IsAuthenticated]
+    pass
+       
