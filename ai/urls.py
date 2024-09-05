@@ -17,7 +17,6 @@ from .views import (
     SubmitAnswerView,
     CompleteGeneratedLearningContentView,
     ListSubjectsView,
-    ListTopicsView,
     )
 
 urlpatterns = [
