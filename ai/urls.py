@@ -16,6 +16,8 @@ from .views import (
     DeleteLearningContentContainerView,
     SubmitAnswerView,
     CompleteGeneratedLearningContentView,
+    ListSubjectsView,
+    ListTopicsView,
     )
 
 urlpatterns = [
@@ -35,4 +37,5 @@ urlpatterns = [
     path('delete-learning-content-container/<str:learning_content_container_id>/', DeleteLearningContentContainerView.as_view(), name='delete_learning_content_container'),
     path('submit-answer/', SubmitAnswerView.as_view(), name='submit_answer'),
     path('complete-learning-content/', CompleteGeneratedLearningContentView.as_view(), name='complete_learning_content'),
+    path('subjects/', ListSubjectsView.as_view(), name='list_subjects'),
 ]
