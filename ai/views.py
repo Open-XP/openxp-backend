@@ -24,6 +24,8 @@ from .serializers import (
                         QuestionSerializer, 
                         TestInstanceSerializer, 
                         UserAnswerSerializer,
+                        SubjectSerializer,
+                        TopicSerializer,
                         )
 from rest_framework.response import Response
 import random
@@ -316,6 +318,12 @@ class CompleteGeneratedLearningContentView(APIView):
         
         return Response(GenerateLearningContentContainerSerializer(container).data, status=status.HTTP_200_OK)
         
+        
+class ListSubjectsView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    queryset = Subject.objects.all()
+    serializer_class = SubjectSerializer
+    
 
 class DeleteLearningContentContainerView(APIView):
     permission_classes = [IsAuthenticated]
