@@ -50,3 +50,22 @@ class UserAnswerSerializer(serializers.ModelSerializer):
         model = UserAnswer
         fields = '__all__'
         read_only_fields = ['is_correct']
+        
+        
+class SubjectSerializer(serializers.ModelSerializer):
+    topics = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Subject
+        fields = ['id', 'name', 'topics']  
+
+    def get_topics(self, obj):
+        topics = Topic.objects.filter(subject=obj) 
+        return TopicSerializer(topics, many=True).data
+        
+    
+class TopicSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = Topic
+        fields = '__all__'
