@@ -21,6 +21,10 @@ class ChatMessage(models.Model):
 class Subject(models.Model):
     name = models.CharField(max_length=100, unique=True) 
 
+    class Meta:
+        verbose_name = "Subject"
+        verbose_name_plural = "Subjects"
+    
     def __str__(self):
         return self.name
 
