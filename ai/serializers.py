@@ -17,13 +17,13 @@ class ChatSessionSerializer(serializers.ModelSerializer):
         
 class GenerateLearningContentContainerSerializer(serializers.ModelSerializer):
     subject = serializers.SlugRelatedField(
-    queryset=Subject.objects.all(),
-    slug_field='name' 
+        queryset=Subject.objects.all(),
+        slug_field='name'  
     )
     
     topic = serializers.SlugRelatedField(
-    queryset=Topic.objects.all(),
-    slug_field='name'
+        queryset=Topic.objects.all(),
+        slug_field='name'  
     )
     
     class Meta:
@@ -57,10 +57,10 @@ class SubjectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Subject
-        fields = ['id', 'name', 'topics']  
+        fields = ['name', 'topics']  
 
     def get_topics(self, obj):
-        topics = Topic.objects.filter(subject=obj) 
+        topics = Topic.objects.filter(subject=obj).distinct()
         return TopicSerializer(topics, many=True).data
         
     
