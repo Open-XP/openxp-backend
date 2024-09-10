@@ -3,13 +3,13 @@ import requests
 from django.conf import settings
 
 def call_ai_api(prompt):
-    api_url = 'https://api.ai71.ai/v1/chat/completions'
+    api_url = 'https://api.aimlapi.com/chat/completions'
     headers = {
         'Content-Type': 'application/json',
         'Authorization': f'Bearer {settings.AI71_API_KEY}'  # Use f-string for interpolation
     }
     data = {
-        "model": "tiiuae/falcon-180b-chat",
+        "model": "gpt-4o",
         "messages": [
             {
                 "role": "system",
@@ -44,13 +44,13 @@ def call_ai_api(prompt):
 
 
 def call_ai_api2(messages):
-    api_url = 'https://api.ai71.ai/v1/chat/completions'
+    api_url = 'https://api.aimlapi.com/chat/completions'
     headers = {
         'Content-Type': 'application/json',
          'Authorization': f'Bearer {settings.AI71_API_KEY}' 
     }
     data = {
-        "model": "tiiuae/falcon-180b-chat",
+        "model": "gpt-4o",
         "messages": messages,
         
     }
