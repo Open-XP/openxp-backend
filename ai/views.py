@@ -32,6 +32,7 @@ import random
 import string
 from datetime import datetime
 import re
+import json
 
 
 class ExplainAnswersView(APIView):
@@ -157,13 +158,14 @@ class GenerateQuestionsAndCreateTestView(APIView):
     def post(self, request, *args, **kwargs):
         subject_name = request.data.get('subject')
         topic_name = request.data.get('topic')
-        num_questions = request.data.get('num_questions', 5)
+        num_questions = request.data.get('num_questions', 10)
+        difficulty = request.data.get('difficulty', 1)
 
         try:
             subject = get_object_or_404(Subject, name=subject_name)
             topic = get_object_or_404(Topic, name=topic_name)
 
-            prompt = f"Generate '{num_questions}' unique questions for the topic '{topic.name}' under the subject '{subject.name}' with options A, B, C, D, and answer for each question"
+            prompt = f"Generate '{num_questions}' unique questions of '{difficulty}/10' for the topic '{topic.name}' under the subject '{subject.name}' with options A, B, C, D, and answer for each question. Just Generate Questions Do not add any comment that are not part of the question. The questions and answers should be in json format with keys 'question', 'options' and 'answer' with the values being the question and answer respectively."
             generated_questions = call_ai_api(prompt)
             print("AI Response:", generated_questions)
 
@@ -213,39 +215,32 @@ class GenerateQuestionsAndCreateTestView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-    def parse_ai_response(self, response_text):
-        question_blocks = response_text.strip().split('\n\n')
+    def parse_ai_response(self, json_string):
+        try:
+            # Parse the JSON string into a Python object
+            questions_data = json.loads(json_string)
+            
+            parsed_questions = []
 
-        parsed_questions = []
+            # Iterate over each question object in the list
+            for question_data in questions_data:
+                question_text = question_data.get('question')
+                options = question_data.get('options', {})
+                correct_answer = question_data.get('answer')
 
-        for block in question_blocks:
-            try:
-                lines = block.split('\n')
-
-                question_text = lines[0].strip()
-                
-                options = {}
-                for line in lines[1:5]:  
-                    option_key = line[0] 
-                    option_text = line[3:].strip()
-                    options[option_key] = option_text
-
-                correct_answer_line = lines[-1].strip()
-                correct_answer = correct_answer_line.split('Answer: ')[-1].strip()[0] 
-
-                # Add parsed question to list
+                # Append the parsed question to the list
                 parsed_questions.append({
                     'question': question_text,
                     'options': options,
                     'correct_answer': correct_answer
                 })
 
-            except (IndexError, ValueError) as e:
-                print(f"Error parsing question block: {block}")
-                print(f"Error details: {e}")
+            return parsed_questions
 
-        return parsed_questions
-    
+        except json.JSONDecodeError as e:
+            print(f"Error decoding JSON: {e}")
+            return []    
+
 
 class TestInstanceQuestionsView(APIView):
     permission_classes = [IsAuthenticated]
