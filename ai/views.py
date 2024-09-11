@@ -31,6 +31,7 @@ from rest_framework.response import Response
 import random
 import string
 from datetime import datetime
+from django.utils import timezone
 import re
 import json
 
@@ -156,26 +157,49 @@ class GenerateQuestionsAndCreateTestView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
+        # Extract input data from the request
         subject_name = request.data.get('subject')
         topic_name = request.data.get('topic')
-        num_questions = request.data.get('num_questions', 10)
+
+        # Validate subject and topic input
+        if not subject_name or not topic_name:
+            return Response({"error": "Subject and topic are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get additional parameters, with defaults
+        num_questions = request.data.get('num_questions', 5)
         difficulty = request.data.get('difficulty', 1)
 
         try:
+            # Fetch subject and topic from the database
             subject = get_object_or_404(Subject, name=subject_name)
             topic = get_object_or_404(Topic, name=topic_name)
 
-            prompt = f"Generate '{num_questions}' unique questions of '{difficulty}/10' for the topic '{topic.name}' under the subject '{subject.name}' with options A, B, C, D, and answer for each question. Just Generate Questions Do not add any comment that are not part of the question. The questions and answers should be in json format with keys 'question', 'options' and 'answer' with the values being the question and answer respectively."
-            generated_questions = call_ai_api(prompt)
-            print("AI Response:", generated_questions)
+            # Form the prompt for AI generation
+            prompt = (
+                f"Generate '{num_questions}' unique questions of '{difficulty}/10' "
+                f"for the topic '{topic.name}' under the subject '{subject.name}' "
+                f"with options A, B, C, D, and answer for each question. "
+                f"Just generate questions, do not add any comment that are not part of the question. "
+                f"The questions and answers should be in JSON format with keys 'question', 'options' and 'answer'."
+            )
 
-            if "choices" in generated_questions:
+            # Call the AI API to generate questions
+            generated_questions = call_ai_api(prompt)
+            print("Raw AI Response:", generated_questions)
+
+            # Ensure the AI response contains choices and parse it
+            if "choices" in generated_questions and len(generated_questions['choices']) > 0:
                 generated_questions = generated_questions['choices'][0]['message']['content']
-                questions_list = self.parse_ai_response(generated_questions) 
+                questions_list = self.clean_and_parse_json(generated_questions)
                 print("Parsed Questions:", questions_list)
             else:
-                return Response({"error": "Failed to generate questions from AI"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                return Response({"error": "AI failed to generate valid questions."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+            # If the questions list is empty, return an error
+            if not questions_list:
+                return Response({"error": "Failed to generate valid questions."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Process and save each question
             questions = []
             for generated_question in questions_list:
                 question_data = {
@@ -184,10 +208,12 @@ class GenerateQuestionsAndCreateTestView(APIView):
                     "option_b": generated_question['options']['B'],
                     "option_c": generated_question['options']['C'],
                     "option_d": generated_question['options']['D'],
-                    "correct_answer": generated_question['correct_answer'],
+                    "correct_answer": generated_question['answer'],
                     "subject": subject.id,
                     "topic": topic.id,
                 }
+
+                # Serialize and validate the question
                 serializer = QuestionSerializer(data=question_data)
                 if serializer.is_valid():
                     question = serializer.save()
@@ -195,13 +221,12 @@ class GenerateQuestionsAndCreateTestView(APIView):
                 else:
                     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            if not questions:
-                return Response({"error": "No valid questions were generated."}, status=status.HTTP_400_BAD_REQUEST)
-
+            # Create the test instance if questions were successfully generated
             test_instance = TestInstance.objects.create(user=request.user, subject=subject, topic=topic)
             test_instance.questions.set(questions)
             test_instance.save()
 
+            # Return the created test instance and success message
             return Response({
                 "test_instance": TestInstanceSerializer(test_instance).data,
                 "message": f"{len(questions)} questions generated and test instance created successfully."
@@ -214,33 +239,37 @@ class GenerateQuestionsAndCreateTestView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
-    def parse_ai_response(self, json_string):
+    def clean_and_parse_json(self, json_string):
+        """
+        Cleans and parses AI-generated JSON from a string.
+        """
         try:
-            # Parse the JSON string into a Python object
-            questions_data = json.loads(json_string)
+            # Clean the string: remove any unnecessary escape sequences, markdown, or newlines
+            cleaned_string = json_string.replace('\\n', '').replace('\\', '').strip()
+
+            # Strip out JSON delimiters if present (e.g., ```json or ``` wrapping)
+            cleaned_string = re.sub(r'```json|```', '', cleaned_string)
+
+            # Validate and parse the JSON string
+            questions_data = json.loads(cleaned_string)
             
-            parsed_questions = []
+            # Ensure the parsed data is a list of dictionaries
+            if not isinstance(questions_data, list):
+                raise ValueError("Parsed JSON is not a list of questions")
 
-            # Iterate over each question object in the list
-            for question_data in questions_data:
-                question_text = question_data.get('question')
-                options = question_data.get('options', {})
-                correct_answer = question_data.get('answer')
+            # Ensure every question contains 'question', 'options', and 'answer'
+            for question in questions_data:
+                if not all(key in question for key in ['question', 'options', 'answer']):
+                    raise ValueError(f"Invalid question format: {question}")
+                if not all(opt in question['options'] for opt in ['A', 'B', 'C', 'D']):
+                    raise ValueError(f"Options missing for question: {question}")
 
-                # Append the parsed question to the list
-                parsed_questions.append({
-                    'question': question_text,
-                    'options': options,
-                    'correct_answer': correct_answer
-                })
+            return questions_data
 
-            return parsed_questions
-
-        except json.JSONDecodeError as e:
-            print(f"Error decoding JSON: {e}")
-            return []    
-
+        except (json.JSONDecodeError, ValueError) as e:
+            print(f"Error decoding or validating JSON: {e}")
+            return []
+    
 
 class TestInstanceQuestionsView(APIView):
     permission_classes = [IsAuthenticated]
@@ -393,7 +422,7 @@ class GenerateDetailedNoteView(APIView):
 
             objective = container.learning_objectives[learning_objective_key]
             prompt = (
-                f"Provide detailed notes for the following learning objective: '{objective}' "
+                f"Provide detailed notes for the following learning objective note **Warning no extra non related texts just go straight to generating learning objectives: '{objective}' "
                 f"under the subject '{container.subject.name}' in a detailed but easy-to-understand manner for a {container.grade}th-grade student."
             )
             detailed_note = call_ai_api(prompt)
@@ -437,6 +466,67 @@ class ListQuestionsView(APIView):
         serializer = QuestionSerializer(questions, many=True)
         return Response(serializer.data, status=200)
     
+class CompleteTestAndScoreView(APIView):
+    def post(self, request, *args, **kwargs):
+        test_instance_id = request.data.get('test_instance_id')
+
+        try:
+            test_instance = TestInstance.objects.get(id=test_instance_id, user=request.user)
+        except TestInstance.DoesNotExist:
+            return Response({"error": "Test instance not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if test_instance.is_completed:
+            return Response({"error": "Test is already completed."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user_answers = UserAnswer.objects.filter(test_instance=test_instance)
+
+        correct_questions = []
+        incorrect_questions = []
+        total_questions = test_instance.questions.count()
+
+        correct_answers_count = 0
+        for answer in user_answers:
+            if answer.is_correct:
+                correct_questions.append(answer.question.id)
+                correct_answers_count += 1
+            else:
+                incorrect_questions.append(answer.question.id)
+
+        score = (correct_answers_count / total_questions) * 100 if total_questions > 0 else 0
+
+        test_instance.is_completed = True
+        test_instance.score = score
+        test_instance.completed_at = timezone.now()
+        test_instance.save()
+
+        return Response({
+            "message": "simulated test completed"
+        }, status=status.HTTP_200_OK)    
+        
+        
+class FetchTestResultsView(APIView):
+    def get(self, request, test_instance_id, *args, **kwargs):
+        # Fetch the test instance
+        try:
+            test_instance = TestInstance.objects.get(id=test_instance_id, user=request.user, is_completed=True)
+        except TestInstance.DoesNotExist:
+            return Response({"error": "Test instance not found or not completed."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Fetch the user's answers
+        user_answers = test_instance.user_answers.all()
+
+        correct_questions = [answer.question.id for answer in user_answers if answer.is_correct]
+        incorrect_questions = [answer.question.id for answer in user_answers if not answer.is_correct]
+
+        # Response with the test results
+        return Response({
+            "test_instance_id": str(test_instance.id),
+            "score": test_instance.score,
+            "correct_questions": correct_questions,
+            "incorrect_questions": incorrect_questions,
+            "completed_at": test_instance.completed_at
+        }, status=status.HTTP_200_OK)
+
     
 class ExplainInAnEasyToUnderstandManner(APIView):
     permission_classes = [IsAuthenticated]
