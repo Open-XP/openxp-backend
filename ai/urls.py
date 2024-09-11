@@ -17,6 +17,8 @@ from .views import (
     SubmitAnswerView,
     CompleteGeneratedLearningContentView,
     ListSubjectsView,
+    CompleteTestAndScoreView,
+    FetchTestResultsView,
     )
 
 urlpatterns = [
@@ -37,4 +39,6 @@ urlpatterns = [
     path('submit-answer/', SubmitAnswerView.as_view(), name='submit_answer'),
     path('complete-learning-content/', CompleteGeneratedLearningContentView.as_view(), name='complete_learning_content'),
     path('subjects/', ListSubjectsView.as_view(), name='list_subjects'),
+    path('complete-simulated-test/', CompleteTestAndScoreView.as_view(), name='complete-test'),
+    path('fetch-test-results/<str:test_instance_id>/', FetchTestResultsView.as_view(), name='fetch-test-results'),
 ]
