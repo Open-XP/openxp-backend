@@ -47,20 +47,31 @@ def call_ai_api2(messages):
     api_url = 'https://api.aimlapi.com/chat/completions'
     headers = {
         'Content-Type': 'application/json',
-         'Authorization': f'Bearer {settings.AI71_API_KEY}' 
+        'Authorization': f'Bearer {settings.AI71_API_KEY}'
     }
     data = {
         "model": "gpt-4o",
         "messages": messages,
-        
+        "max_tokens": 1000 
     }
     
-    print('data:', data)
+    print('Data sent to API:', data)
 
     try:
-        response = requests.post(api_url, json=data, headers=headers, timeout=30)
+        response = requests.post(api_url, json=data, headers=headers, timeout=60)
         response.raise_for_status()
-        return response.json()
+        
+        # Print full response for debugging
+        print('Response status code:', response.status_code)
+        print('Response headers:', response.headers)
+        print('Response text:', response.text)
+        
+        json_response = response.json()
+        
+        # Adjust this based on the actual structure of the API response
+        generated_text = json_response['choices'][0]['message']['content']
+        
+        return generated_text
     except requests.exceptions.RequestException as e:
         return {"error": str(e)}
     except ValueError:
