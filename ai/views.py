@@ -402,9 +402,9 @@ class GenerateSpecificContentView(APIView):
 
     def generate_prompt(self, subject, topic, grade, section_type):
         if section_type == 'introduction':
-            return f"Provide a brief introduction to the topic '{topic.name}' under the subject '{subject.name}', suitable for a {grade}th-grade student."
+            return f"I dont want any comment like certainly, Just start with what you are asked to do which is to provide a brief introduction to the topic '{topic.name}' under the subject '{subject.name}', suitable for a {grade}th-grade student."
         elif section_type == 'learning_objectives':
-            return f"List 10 key learning objectives for the topic '{topic.name}' under the subject '{subject.name}', targeting a {grade}th-grade student."
+            return f"Do not say anything that is not a learning content just generate List 10 key learning objectives for the topic '{topic.name}' under the subject '{subject.name}', targeting a {grade}th-grade student."
 
         
 class GenerateDetailedNoteView(APIView):
@@ -422,9 +422,10 @@ class GenerateDetailedNoteView(APIView):
 
             objective = container.learning_objectives[learning_objective_key]
             prompt = (
-                f"Provide detailed notes for the following learning objective note **Warning no extra non related texts just go straight to generating learning objectives: '{objective}' "
+                f"Provide detailed notes for the following learning objective with difficulty '{container.difficulty}/10' note **Warning no extra non related texts just go straight to generating learning objectives: '{objective}' "
                 f"under the subject '{container.subject.name}' in a detailed but easy-to-understand manner for a {container.grade}th-grade student."
             )
+            print('Generate detailed note prompt:', prompt)
             detailed_note = call_ai_api(prompt)
             if "choices" in detailed_note:
                 detailed_note = detailed_note['choices'][0]['message']['content']
@@ -504,21 +505,26 @@ class CompleteTestAndScoreView(APIView):
         }, status=status.HTTP_200_OK)    
         
         
-class FetchTestResultsView(APIView):
-    def get(self, request, test_instance_id, *args, **kwargs):
-        # Fetch the test instance
-        try:
-            test_instance = TestInstance.objects.get(id=test_instance_id, user=request.user, is_completed=True)
-        except TestInstance.DoesNotExist:
-            return Response({"error": "Test instance not found or not completed."}, status=status.HTTP_404_NOT_FOUND)
+class FetchTestResultsView(generics.RetrieveAPIView):
+    serializer_class = TestInstanceSerializer
+    permission_classes = [IsAuthenticated]
 
-        # Fetch the user's answers
+    def get_object(self):
+        test_instance_id = self.kwargs['test_instance_id']
+        test_instance = get_object_or_404(TestInstance, id=test_instance_id, user=self.request.user, is_completed=True)
+        return test_instance
+
+    def get(self, request, *args, **kwargs):
+        test_instance = self.get_object()
+
         user_answers = test_instance.user_answers.all()
+        
+        correct_answers = user_answers.filter(is_correct=True)
+        incorrect_answers = user_answers.filter(is_correct=False)
 
-        correct_questions = [answer.question.id for answer in user_answers if answer.is_correct]
-        incorrect_questions = [answer.question.id for answer in user_answers if not answer.is_correct]
+        correct_questions = QuestionSerializer([answer.question for answer in correct_answers], many=True).data
+        incorrect_questions = QuestionSerializer([answer.question for answer in incorrect_answers], many=True).data
 
-        # Response with the test results
         return Response({
             "test_instance_id": str(test_instance.id),
             "score": test_instance.score,
