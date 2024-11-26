@@ -124,7 +124,7 @@ ROOT_URLCONF = 'backend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'openxp-frontend/build'],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -206,7 +206,7 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Directories where Django will search for additional static files in development
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'openxp-frontend/build/static')]
+# STATICFILES_DIRS = [os.path.join(BASE_DIR, 'openxp-frontend/build/static')]
 
 # URL that handles the media served from MEDIA_ROOT
 MEDIA_URL = '/media/'

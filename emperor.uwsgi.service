@@ -2,8 +2,8 @@
 Description=uwsgi emperor for open web app
 After=network.target
 [Service]
-User=mannie
+User=ubuntu
 Restart=always
-ExecStart=/home/mannie/openxp-backend/env/bin/uwsgi --emperor /home/mannie/openxp-backend/env/md/vassals --uid mannie --gid mannie
+ExecStart=/home/ubuntu/openxp-backend/env/bin/uwsgi --emperor /home/ununtu/openxp-backend/env/md/vassals --uid ubuntu --gid ubuntu
 [Install]
 WantedBy=multi-user.target

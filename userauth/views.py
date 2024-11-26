@@ -215,25 +215,20 @@ class UserLoginAPIView(generics.CreateAPIView):
     
 
 class UserLogoutAPIView(APIView):
-    permission_classes = [AllowAny]  # Allow any user to access this endpoint
+    permission_classes = [IsAuthenticated]  # Ensure the user is authenticated
 
     def post(self, request):
-        try:
-            refresh_token = request.data.get('refresh') if request.data else None
-            if refresh_token:
-                try:
-                    token = RefreshToken(refresh_token)
-                    token.blacklist()
-                except Exception as e:
-                    # Token is invalid or already blacklisted
-                    pass
-            
-            # Always return a success message, even if token blacklisting fails
-            return Response({"message": "Logout successful."}, status=status.HTTP_200_OK)
-        except Exception as e:
-            print(f"Logout error: {str(e)}")
-            # Still return a success message to ensure the frontend completes logout
-            return Response({"message": "Logout completed."}, status=status.HTTP_200_OK)
+        refresh_token = request.data.get('refresh')  # Get the refresh token from the request body
+        if refresh_token:
+            try:
+                token = RefreshToken(refresh_token)
+                token.blacklist()  # Blacklist the token
+            except Exception as e:
+                # Handle the case where token is invalid or already blacklisted
+                return Response({"error": "Invalid or already blacklisted token."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Always return a success response to the client
+        return Response({"message": "Logout successful."}, status=status.HTTP_200_OK)
         
         
 class CustomTokenRefreshView(TokenRefreshView):

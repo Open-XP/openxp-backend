@@ -88,24 +88,28 @@ class ChatView(APIView):
         except ChatSession.DoesNotExist:
             return Response({'error': 'Session not found'}, status=status.HTTP_404_NOT_FOUND)
 
+        # Save the user's message
         user_message_instance = ChatMessage.objects.create(session=session, role='user', content=user_message)
 
+        # Fetch all session messages
         all_messages = session.messages.all().order_by('timestamp')
         messages = [
             {"role": message.role, "content": message.content}
             for message in all_messages
         ]
 
+        # Call AI API
         ai_response = call_ai_api2(messages)
 
-        if "choices" in ai_response:
-            response_content = ai_response['choices'][0]['message']['content']
-            assistant_message_instance = ChatMessage.objects.create(session=session, role='assistant', content=response_content)
-            response_serializer = ChatMessageSerializer(assistant_message_instance)
-            return Response({'response': response_serializer.data}, status=status.HTTP_200_OK)
-        else:
+        # Handle the response
+        if isinstance(ai_response, dict):  # If an error dictionary is returned
             error_message = ai_response.get('error', 'Unknown error')
             return Response({'error': error_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        # Assume a string response (generated text) when successful
+        assistant_message_instance = ChatMessage.objects.create(session=session, role='assistant', content=ai_response)
+        response_serializer = ChatMessageSerializer(assistant_message_instance)
+        return Response({'response': response_serializer.data}, status=status.HTTP_200_OK)
         
     
 class CareerSuggestionsView(APIView):
